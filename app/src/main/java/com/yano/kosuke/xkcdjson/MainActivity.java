@@ -24,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.HttpURLConnection;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
         View.OnFocusChangeListener {
 
@@ -97,7 +99,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onErrorResponse(VolleyError error) {
                 System.out.println(error.getMessage());
-                showShortToast("ERROR: invalid comic id " + comicId);
+
+                if (error.networkResponse.statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    showShortToast("ERROR: invalid comic id " + comicId);
+                } else {
+                    showShortToast("ERROR: " + error.getMessage());
+                }
             }
         });
 
