@@ -1,5 +1,6 @@
 package com.yano.kosuke.xkcdjson;
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -23,7 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+        View.OnFocusChangeListener {
 
     EditText comicIdEditText;
     Button   processButton;
@@ -39,29 +41,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         processButton      = (Button)   findViewById(R.id.process_button);
         transcriptTextView = (TextView) findViewById(R.id.transcript_textview);
 
+        // setup listener for edittext
+        comicIdEditText.setOnFocusChangeListener(this);
+
         // setup listener for button
         processButton.setOnClickListener(this);
     }
 
     @Override
+    public void onFocusChange(View v, boolean hasFocus) {
+        if (!hasFocus) { hideKeyboard(v); }
+    }
+
+    @Override
     public void onClick(View v) {
+        // clear textview
+        transcriptTextView.setText("");
+
         // guard condition for no search
         if (isEmptySearchEditText()) {
             showShortToast("ERROR: Please insert search term");
         }
 
         if (isOnline()) {
+            // edittext is set to use numbers only
             setTranscript(comicIdEditText.getText().toString());
         } else {
             showShortToast("ERROR: No network connectivity");
         }
 
-        InputMethodManager imm = (InputMethodManager)
-                getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(comicIdEditText.getWindowToken(), 0);
+        hideKeyboard(comicIdEditText);
     }
 
-    protected void setTranscript(String comicId) {
+    protected void setTranscript(final String comicId) {
         String URL = "http://xkcd.com/"
                 + comicId
                 + "/info.0.json";
@@ -85,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onErrorResponse(VolleyError error) {
                 System.out.println(error.getMessage());
+                showShortToast("ERROR: invalid comic id " + comicId);
             }
         });
 
@@ -110,5 +123,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int duration    = Toast.LENGTH_SHORT;
         Toast toast     = Toast.makeText(context, message, duration);
         toast.show();
+    }
+
+    protected void hideKeyboard(View v) {
+        InputMethodManager imm = (InputMethodManager)
+                getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
     }
 }
